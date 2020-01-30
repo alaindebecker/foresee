@@ -1,0 +1,150 @@
+<meta charset="utf-8">
+
+<style>
+	#box1 { width: 960px; height: 720px; margin-top: 50px; }
+	#box2 { width: 200px; height: 150px; margin-left: 500px; }
+
+	.foresee { border: 1px solid grey }
+	.foresee_file { background: pink }
+	.foresee_data { background: lightgreen }
+	.foresee_graph { background: lightyellow }
+	.foresee_panel { background: lightcyan }
+	.foresee_panel_tabs { background: lightcyan }
+	.foresee_filter { background: lightblue }
+</style>
+
+
+
+<script>
+initialize = function(box){
+	box.innerHTML += `
+		<table class='foresee_data'>
+			<tr><td>Time</td><td>Data</td><td>Fit</td><td>Weight</td><td>Error</td></tr>
+		</table>
+		<input class='foresee_file' type="file">
+		
+		<ul class="foresee_graph">
+			<li>Main</li>
+		</ul>
+
+		<ul class="foresee_filter">
+			<li>Week</li>
+			<li>Month</li>
+		</ul>
+
+		<div class="foresee_panel">
+			<div class="foresee_panel_time">Time</div>
+			<div class="foresee_panel_data">Data</div>
+			<div class="foresee_panel_graph">Graph</div>
+			<div class="foresee_panel_fit">Fit</div>
+			<div class="foresee_panel_error">Error</div>
+		</div>
+
+		<div class="foresee_sep3" onmousedown="startDrag(event, 3)"></div>
+		<div class="foresee_sep2" onmousedown="startDrag(event, 2)">
+			<div class="foresee_tab">Time</div>
+			<div class="foresee_tab">Data</div>
+			<div class="foresee_tab">Graph</div>
+			<div class="foresee_tab">Fit</div>
+			<div class="foresee_tab">Error</div>
+		</div>
+		<div class="foresee_sep1" onmousedown="startDrag(event, 1)"></div>
+	`
+}
+
+window.addEventListener('load', function(event){
+	style = document.createElement('style')
+	document.head.appendChild(style)
+	style.innerHTML = `
+		.foresee { position: relative; margin:0; padding: 0; font-family: Verdana, sans-serif; }
+		.foresee * { margin:0; padding: 0; }
+		.foresee_file   { position: absolute; left:   0 ; top: 0; } 
+		.foresee_data   { position: absolute; left:   0 ; top: 1em; } 
+		.foresee_graph  { position: absolute; left:  25%; width: 50%; top:  0 ; height: 75%; }
+		.foresee_panel  { position: absolute; width: 75%; right:  0 ; top: 75%; bottom:  0 ; margin-top: 1em; }
+		.foresee_filter { position: absolute; width: 25%; right:  0 ; top:  0 ; height: 75%; }	
+
+		.foresee_sep1   { position: absolute; left:  25%; width: 1em; top:  0 ; height: 100%; }	
+		.foresee_sep2   { position: absolute; left:  25%; width: 75%; top: 75%; height: 2em; font-size: small; padding-left: 1em }	
+		.foresee_sep3   { position: absolute; left:  75%; width: 1em; top:  0 ; height: 75%; }	
+		.foresee_sep1:hover { background: lightgrey; cursor: col-resize }	
+		.foresee_sep2 { background: whitesmoke; cursor: row-resize }	
+		.foresee_sep3:hover { background: lightgrey; cursor: col-resize }	
+
+		.foresee_tab { padding: .5em; float: right; cursor: default; }
+	`
+	for(var foresee of document.querySelectorAll('.foresee'))
+		initialize(foresee)
+})
+
+
+var drag
+startDrag = function(event, sep){
+	drag = event.target.parentElement
+	drag.sep = sep
+	if(sep==1)
+		drag.offset = event.clientX - event.target.offsetLeft - drag.offsetLeft
+	if(sep==2)
+		drag.offset = event.clientY - event.target.offsetTop - drag.offsetTop
+	if(sep==3)
+		drag.offset = event.clientX - event.target.offsetLeft - drag.offsetLeft
+}
+window.addEventListener('mouseup', function(){
+	drag = null
+})
+
+window.addEventListener('mousemove', function(event){
+	if(drag){
+		if(drag.sep==1){
+			var x = event.clientX - drag.offset - drag.offsetLeft
+			if(x<0)
+				x = 0
+			if(drag.querySelector('.foresee_filter').offsetLeft - drag.querySelector('.foresee_sep1').offsetWidth<x)
+				x = drag.querySelector('.foresee_filter').offsetLeft - drag.querySelector('.foresee_sep1').offsetWidth
+
+			var w = Number.parseInt(getComputedStyle(drag).width)
+			drag.querySelector('.foresee_sep1').style.left   = x +'px'
+			drag.querySelector('.foresee_graph').style.left  = x +'px'
+			drag.querySelector('.foresee_graph').style.width = (w - drag.querySelector('.foresee_graph').offsetLeft - drag.querySelector('.foresee_filter').offsetWidth) + 'px'
+			drag.querySelector('.foresee_panel').style.left  = x +'px'
+			drag.querySelector('.foresee_panel').style.width = (w - drag.querySelector('.foresee_panel').offsetLeft) + 'px'
+			drag.querySelector('.foresee_sep2').style.left  = x +'px'
+			drag.querySelector('.foresee_sep2').style.width = (w - drag.querySelector('.foresee_panel').offsetLeft) + 'px'
+		}
+		if(drag.sep==2){
+			var y = event.clientY - drag.offset - drag.offsetTop
+			if(y < 0) 
+				y = 0
+			if(drag.offsetHeight-drag.querySelector('.foresee_sep2').offsetHeight < y) 
+				y = drag.offsetHeight - drag.querySelector('.foresee_sep2').offsetHeight
+
+			var h = Number.parseInt(getComputedStyle(drag).height)
+			drag.querySelector('.foresee_sep2').style.top     = y +'px'
+			drag.querySelector('.foresee_graph').style.height = y + 'px'
+			drag.querySelector('.foresee_panel').style.top    = y +'px'
+			drag.querySelector('.foresee_panel').style.height = (h - drag.querySelector('.foresee_panel').offsetTop) + 'px'
+			drag.querySelector('.foresee_filter').style.height= y + 'px'
+			drag.querySelector('.foresee_sep3').style.height  = y + 'px'			
+		}
+		if(drag.sep==3){
+			var x = event.clientX - drag.offset - drag.offsetLeft
+			if(x<drag.querySelector('.foresee_graph').offsetLeft)
+				x = drag.querySelector('.foresee_graph').offsetLeft
+			if(drag.offsetWidth-drag.querySelector('.foresee_sep3').offsetWidth<x)
+				x = drag.offsetWidth - drag.querySelector('.foresee_sep3').offsetWidth
+
+			var w = Number.parseInt(getComputedStyle(drag).width)
+			drag.querySelector('.foresee_sep3').style.left    = x +'px'
+			drag.querySelector('.foresee_filter').style.left  = x +'px'
+			drag.querySelector('.foresee_filter').style.width = (w - drag.querySelector('.foresee_filter').offsetLeft) +'px'
+			drag.querySelector('.foresee_graph').style.width  = (drag.querySelector('.foresee_filter').offsetLeft - drag.querySelector('.foresee_graph').offsetLeft) + 'px'
+		}
+	}
+})
+
+</script>
+
+<body>
+	<div id="box1" class="foresee">box1</div>
+	<div id="box2" class="foresee">box2</div>
+</body>
